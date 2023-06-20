@@ -1,6 +1,7 @@
 import os
 import sys
 import pathlib
+from typing import Iterable, Mapping
 
 from pypdf import (
     PdfReader,
@@ -11,15 +12,15 @@ from pypdf import (
 )
 
 
-class UnporcessableFilesError(Exception):
-    def __init__(self, unprocessable_files: list[tuple[pathlib.Path, str]]):
-        self.unprocessable_files = unprocessable_files
+class UnporcessableArgumentsError(Exception):
+    def __init__(self, unprocessable_arguments: list[tuple[pathlib.Path | str, str]]):
+        self.unprocessable_arguments = unprocessable_arguments
 
     def __str__(self):
-        files_repr = '\n'.join([
-            f'{name}: {why}' for name, why in self.unprocessable_files
+        args_repr = '\n'.join([
+            f'{name}: {why}' for name, why in self.unprocessable_arguments
         ])
-        return f'This files cannot be processed:\n{files_repr}'
+        return f'These arguments cannot be processed:\n{args_repr}'
 
 
 def sticker_list(files_list: list[PdfReader]) -> list[PageObject]:
@@ -106,7 +107,7 @@ def process_paths(files_list: list[str | os.PathLike]) -> list[PdfReader]:
             unprocessable_paths.append(file_error)
 
     if unprocessable_paths:
-        raise UnporcessableFilesError(unprocessable_paths)
+        raise UnporcessableArgumentsError(unprocessable_paths)
 
     return [PdfReader(f) for f in files_list]
 
@@ -125,27 +126,88 @@ def compose_stickers(files_list: list[str | os.PathLike], file_to_write: str = '
         writer.write(fp)
 
 
+def parse_options(
+        arguments: list[str],
+        implemented_options: Iterable
+) -> tuple[list[tuple[str, str]], list[str]]:
+    """
+    Separate options, if provided, from file names.
+
+    :param arguments: List of all provided arguments
+    :param implemented_options: Iterable of implemented options to parse
+    :return: Tuple of list of options with values and list of files
+    """
+
+    options = []
+    while len(arguments) > 1:
+        if arguments[0] in implemented_options:
+            options.append((arguments.pop(0), arguments.pop(0)))
+        else:
+            break
+
+    return options, arguments
+
+
+def file_name(value: str, result_dict: dict) -> dict:
+    """
+    -f option. User defined name of final file.
+
+    :param value: User provided name
+    :param result_dict: Dict of arguments to modify
+    :return: Modified dict of arguments
+    """
+    result_dict['file_to_write'] = value
+    return result_dict
+
+
+def directory(value: str, result_dict: dict) -> dict:
+    """
+    -d option. User defined directory from which all pdf files will be used as files list.
+
+    :param value: Name of the directory
+    :param result_dict: Dict of arguments to modify
+    :return: Modified dict of arguments
+    """
+    try:
+        result_dict['files_list'] = [value / pathlib.Path(f) for f in os.listdir(value) if f.endswith('.pdf')]
+    except FileNotFoundError:
+        raise UnporcessableArgumentsError([(value, 'No such directory'), ])
+
+    return result_dict
+
+
 def parse_arguments() -> dict[str, str]:
     """
     Parse command line arguments.
 
-    -f, --file-name - optional. Name of the final file to save.
+    -f - optional. Name of the final file to save
+    -d - optional. Directory from which all pdf files will be used as input files
 
     :return: Dict of kwargs to main function
     """
 
-    result_file_name = 'stickers.pdf'
-    file_names_start_from = 1
-    if sys.argv[1] in ('-f', '--file-name'):
-        result_file_name = sys.argv[2]
-        file_names_start_from = 3
-
-    return {
-        'files_list': sys.argv[file_names_start_from:],
-        'file_to_write': result_file_name
+    # Flags with corresponding functions that modify result dict accordingly
+    implemented_options = {
+        '-f': file_name,
+        '-d': directory,
     }
+
+    # Get list of options with their values and list of files to use
+    options, files = parse_options(sys.argv[1:], implemented_options)
+
+    # Default input to main function
+    result = {
+        'files_list': files,
+        'file_to_write': 'stickers.pdf'
+    }
+
+    # For all parsed options call corresponding function with its value and result dict to modify
+    for option, value in options:
+        implemented_options[option](value, result)
+
+    return result
 
 
 if __name__ == '__main__':
+    # print(parse_arguments())
     compose_stickers(**parse_arguments())
-
