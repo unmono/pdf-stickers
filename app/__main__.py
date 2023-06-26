@@ -1,7 +1,7 @@
 import os
 import sys
 import pathlib
-from typing import Iterable, Mapping
+from typing import Iterable
 
 from pypdf import (
     PdfReader,
@@ -98,7 +98,7 @@ def process_paths(files_list: list[str | os.PathLike]) -> list[PdfReader]:
         file_error = None
         if not p.exists():
             file_error = (p, 'File doesn\'t exist')
-        elif not p.suffix == '.pdf':
+        elif p.suffix not in ('.pdf', '.PDF'):
             file_error = (p, 'File has non-pdf extension')
         elif not os.access(p, os.R_OK):
             file_error = (p, 'File cannot be read')
@@ -112,7 +112,10 @@ def process_paths(files_list: list[str | os.PathLike]) -> list[PdfReader]:
     return [PdfReader(f) for f in files_list]
 
 
-def compose_stickers(files_list: list[str | os.PathLike], file_to_write: str = 'stickers.pdf') -> None:
+def compose_stickers(
+    files_list: list[str | os.PathLike],
+    file_to_write: str | os.PathLike = 'stickers.pdf'
+) -> None:
     """
     Make .pdf file with all pages from listed files as stickers placed on A4 page.
 
