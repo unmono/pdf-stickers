@@ -1,10 +1,9 @@
 import os
 from typing import Iterable, Callable
 from pathlib import Path
-from dataclasses import dataclass
 
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import filedialog
 
 from app.__main__ import compose_stickers
 
@@ -100,9 +99,3 @@ class StickersUI:
             filetypes=[('PDF', ('*.pdf', '*.PDF')), ]
         )
         compose_stickers(self.file_list, file_to_save)
-
-
-stickers = StickersUI([
-    browse_directory,
-    browse_files,
-])

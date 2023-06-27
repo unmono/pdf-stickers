@@ -47,7 +47,7 @@ def sticker_stacker(stickers: list[PageObject]) -> PdfWriter:
     # Initial goal is to fit 6(2x3 grid) stickers on A4 page
     #
     # Need to think how to bind this numbers together when the grid will be
-    # a subject to chage
+    # a subject to change
     sticker_widht = PaperSize.A4.width / 2
     sticker_height = PaperSize.A4.height / 3
 
