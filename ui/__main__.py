@@ -1,4 +1,4 @@
-from .StickersUI import StickersUI, browse_files, browse_directory
+from ui.StickersUI import StickersUI, browse_files, browse_directory
 
 if __name__ == '__main__':
     stickers = StickersUI([

@@ -98,4 +98,5 @@ class StickersUI:
             defaultextension='.pdf',
             filetypes=[('PDF', ('*.pdf', '*.PDF')), ]
         )
-        compose_stickers(self.file_list, file_to_save)
+        if file_to_save:
+            compose_stickers(self.file_list, file_to_save)

@@ -172,7 +172,7 @@ def directory(value: str, result_dict: dict) -> dict:
     :return: Modified dict of arguments
     """
     try:
-        result_dict['files_list'] = [value / pathlib.Path(f) for f in os.listdir(value) if f.endswith('.pdf')]
+        result_dict['files_list'] = [value / pathlib.Path(f) for f in os.listdir(value) if f.endswith(('.pdf', '.PDF'))]
     except FileNotFoundError:
         raise UnporcessableArgumentsError([(value, 'No such directory'), ])
 
