@@ -1,6 +1,6 @@
 # pdf-stickers
 
-**Should:** Combine pdf stickers to fit them on regular size page
+**Should:** Combine pdf stickers to fit them efficiently on regular size page
 
 **Does:** All individual pages from all provided files resize and place on A4 page
 
@@ -13,7 +13,7 @@
 For now. Of course.
 
 **How:** 
-- Use it as a module: `python3 -m app list.pdf of.pdf pdf.pdf files.pdf` or `python3 -m app -f file_path_to_save.pdf -d 
+- Use it as a module: `python3 -m app list.pdf of.pdf pdf.pdf files.pdf` or `python3 -m app -f file_path_to_save.pdf -d
 /dir/from/which/all/pdfs/will/be/used`
 
     - options -f and -d are optional
@@ -24,4 +24,4 @@ For now. Of course.
 - Use carefully designed UI from ui module:
     - run it as module: `python3 -m ui`
     - use run.sh (why not) `chmod u+x run.sh`(x1) and then `./run.sh`(as needed)
-    - or even create your .desktop file, as I supposed to, but it became lazy.
+    - or even create your .desktop file, as I supposed to, but got lazy.
