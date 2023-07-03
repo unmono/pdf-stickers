@@ -1,7 +1,8 @@
-from ui.StickersUI import StickersUI, browse_files, browse_directory
+from ui.StickersUI import StickersUI
 
 if __name__ == '__main__':
-    stickers = StickersUI([
-        browse_directory,
-        browse_files,
-    ])
+    stickers = StickersUI()
+    stickers.run()
+
+# TODO:
+#  - create desktop entries and install scripts

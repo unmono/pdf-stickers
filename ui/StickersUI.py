@@ -7,27 +7,14 @@ from tkinter import ttk, filedialog, messagebox
 from pypdf import PaperSize
 
 from app.__main__ import compose_stickers, UnporcessableArgumentsError
+from JSONPreferencesKeeper import JSONPreferencesKeeper
 
 
 PAPER_SIZES = [s for s in dir(PaperSize) if not s.startswith('__')]
 
 
-def browse_files() -> Iterable[Path]:
-    return tk.filedialog.askopenfilenames(
-        defaultextension='.pdf',
-        filetypes=[('PDF', ('*.pdf', '*.PDF')), ]
-    )
-
-
-def browse_directory() -> Iterable[Path]:
-    dir_name = tk.filedialog.askdirectory()
-    return [Path(dir_name) / f for f in os.listdir(dir_name) if f.endswith(('.pdf', '.PDF', ))] \
-        if dir_name \
-        else []
-
-
-class StickersUI:
-    def __init__(self, browse_functions: list[Callable[[], Iterable[Path]]]):
+class StickersUI(JSONPreferencesKeeper):
+    def __init__(self):
         self.root = tk.Tk()
         self.root.title('Sticker stacker')
         self.root.minsize(width=500, height=300)
@@ -37,12 +24,16 @@ class StickersUI:
         self.paper_size = tk.StringVar()
         self.stickers_in_width = tk.IntVar()
         self.stickers_in_height = tk.IntVar()
-        self._browse_mode = tk.IntVar()
+        self.browse_mode = tk.IntVar()
         self._file_list = []
-        self.browse_functions = browse_functions
+        self.browse_functions = [self.browse_directory, self.browse_files]
+        self.initial_browse_dir = Path()
+        self.initial_browse_files_dir = Path()
+        self.initial_save_dir = Path()
 
         self.stickers_in_width.set(2)
         self.stickers_in_height.set(3)
+        self.paper_size.set('A4')
 
         # Frames:
         self.frm_radios = tk.Frame(master=self.root, pady=5)
@@ -66,7 +57,6 @@ class StickersUI:
                                            values=PAPER_SIZES,
                                            width=5,
                                            textvariable=self.paper_size,)
-        self.cbx_paper_size.current(PAPER_SIZES.index('A4'))
 
         self.sbx_stickers_in_width = tk.Spinbox(master=self.frm_grid, from_=1, to=40, width=2,
                                                 textvariable=self.stickers_in_width)
@@ -83,11 +73,11 @@ class StickersUI:
 
         # Radios:
         self.rbtn1 = tk.Radiobutton(master=self.frm_radios,
-                                    variable=self._browse_mode,
+                                    variable=self.browse_mode,
                                     value=0,
                                     text='Select directory')
         self.rbtn2 = tk.Radiobutton(master=self.frm_radios,
-                                    variable=self._browse_mode,
+                                    variable=self.browse_mode,
                                     value=1,
                                     text='Select individual files')
         self.rbtn1.grid(column=0, row=0, sticky='nw')
@@ -101,12 +91,16 @@ class StickersUI:
         self.btn_clear.pack(side=tk.LEFT, padx=4)
         self.btn_save.pack(side=tk.RIGHT)
 
-        # Run mainloop
-        self.root.mainloop()
-
-    @property
-    def browse_mode(self) -> int:
-        return self._browse_mode.get()
+        # Set preferences to keep between usage
+        self.define_prefs(
+            'paper_size',
+            'stickers_in_width',
+            'stickers_in_height',
+            'browse_mode',
+            'initial_browse_dir',
+            'initial_browse_files_dir',
+            'initial_save_dir',
+        )
 
     @property
     def file_list(self) -> list[Path]:
@@ -126,9 +120,27 @@ class StickersUI:
             self.btn_clear.config(state=tk.DISABLED)
             self.btn_save.config(state=tk.DISABLED)
 
+    def browse_files(self) -> Iterable[Path]:
+        files = tk.filedialog.askopenfilenames(
+            defaultextension='.pdf',
+            filetypes=[('PDF', ('*.pdf', '*.PDF')), ],
+            initialdir=self.initial_browse_files_dir
+        )
+        if not files:
+            return []
+        paths = [Path(f) for f in files]
+        self.initial_browse_files_dir = paths[-1].parent
+        return paths
+
+    def browse_directory(self) -> Iterable[Path]:
+        dir_name = tk.filedialog.askdirectory(initialdir=self.initial_browse_dir)
+        if not dir_name:
+            return []
+        self.initial_browse_dir = Path(dir_name)
+        return [self.initial_browse_dir / f for f in os.listdir(dir_name) if f.endswith(('.pdf', '.PDF',))]
+
     def browse(self):
-        chosen_files = self.browse_functions[self.browse_mode]()
-        self.file_list += [Path(f) for f in chosen_files]
+        self.file_list += self.browse_functions[self.browse_mode.get()]()
 
     def clear(self):
         self.file_list = []
@@ -136,15 +148,23 @@ class StickersUI:
     def save(self):
         file_to_save = tk.filedialog.asksaveasfilename(
             defaultextension='.pdf',
-            filetypes=[('PDF', ('*.pdf', '*.PDF')), ]
+            filetypes=[('PDF', ('*.pdf', '*.PDF')), ],
+            initialdir=self.initial_save_dir,
         )
         if file_to_save:
+            path_to_save = Path(file_to_save)
+            self.initial_save_dir = path_to_save.parent
             kwargs = {
                 'stickers_in_width': self.stickers_in_width.get(),
                 'stickers_in_height': self.stickers_in_height.get(),
                 'paper_format': self.paper_size.get(),
             }
             try:
-                compose_stickers(self.file_list, file_to_save, **kwargs)
+                compose_stickers(self.file_list, path_to_save, **kwargs)
             except UnporcessableArgumentsError as e:
                 messagebox.showerror(message=str(e))
+            self.save_prefs()
+
+    def run(self):
+        self.set_prefs()
+        self.root.mainloop()
