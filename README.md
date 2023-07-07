@@ -1,27 +1,48 @@
 # pdf-stickers
 
-**Should:** Combine pdf stickers to fit them efficiently on regular size page
+**Should:** combine .pdf files, so they can be printed on a chosen page size
 
-**Does:** All individual pages from all provided files resize and place on A4 page
+---
 
-- Doesn't ask you preferable size of sticker
-- Doesn't ask you preferable paper size
-- Doesn't save proportions of the input page
-- Works only with A4
-- Resizes all pages to size that can fit on A4 page 6 times (Because it's what we need at work)
+**Does:** resize each page from the input files and arrange them on a page according to the chosen layout.
 
-For now. Of course.
+After you:
+- specify how many stickers should be placed across(horizontaly on) the page
+- specify how many stickers should be placed down(vertically on) the page
+- specify the size of a page
+- specify the gap between stickers if needed
+- allow or disallow it to rotate a page when its original ratio is violated in the chosen layout
+- pick files individually or import all .pdf files from selected directories
 
-**How:** 
-- Use it as a module: `python3 -m app list.pdf of.pdf pdf.pdf files.pdf` or `python3 -m app -f file_path_to_save.pdf -d
-/dir/from/which/all/pdfs/will/be/used`
+---
 
-    - options -f and -d are optional
-    - if -f is ommited, standard name is used
-    - if -d is specified, all pdf files from provided directory is used only
+**How:**
+- Use it as a module:
 
-- Import function `compose_stickers`, give it list of file names and file name to save.
-- Use carefully designed UI from ui module:
+    `python3 -m app [OPTIONS] list.pdf of.pdf files.pdf to.pdf combine.pdf`
+    
+    `Options can be:`
+
+    `-f [FILE] - specify the path and name of file that will be created. Default is ./stickers.pdf.`
+
+    `-d [DIRECTORY] - specify the directory from which all .pdf files will be used as input along with individual files
+    if provided.`
+
+    `-w [INTEGER] - specify how many stickers to place in the width of a page. Default is 2.`
+
+    `-h [INTEGER] - specify how many stickers to place in the height of a page. Default is 3.`
+    
+    `-s [PAGE SIZE] - specify the page size. Like A4, A3 etc. Default is A4.`
+
+    `-g [INTEGER] - specify the gap between stickers in mm. Default is 0.`
+
+    `-r [BOOLEAN] - type 'false' if you don't want program to rotate the page if its ratio is violated. Default 
+    is 'true'.`
+
+
+- Import function `compose_stickers`, read its doc and give it what it wants.
+
+
+- Use beautiful UI:
     - run it as module: `python3 -m ui`
     - use run.sh (why not) `chmod u+x run.sh`(x1) and then `./run.sh`(as needed)
-    - or even create your .desktop file, as I supposed to, but got lazy.
