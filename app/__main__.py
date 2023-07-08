@@ -36,9 +36,9 @@ def validate_grid_value(*args) -> list[tuple[str, str]]:
 def sticker_stacker(
         stickers: list[PageObject],
         paper_format: str = 'A4',
-        # Initial goal is to fit 6(2x3 grid) stickers on A4 page, so the default values are 2 and 3
         stickers_in_width: int = 2,
         stickers_in_height: int = 3,
+        keep_ratio: bool = True,
 ) -> PdfWriter:
     """
     Creates a PdfWriter object with all stickers placed on A4 pages.
@@ -46,6 +46,7 @@ def sticker_stacker(
     :param paper_format: paper format to use (e.g. A4, A3 etc.)
     :param stickers_in_width: how many stickers do you want to place in a single row on a page(stickers in width)
     :param stickers_in_height: how many rows of stickers should be on a page(stickers in height)
+    :param keep_ratio: to rotate or individual page if its original ratio is violated
     :param stickers: list of PageObject representing each sticker
     :return: PdfWriter object ready to write in file
     """
@@ -62,7 +63,7 @@ def sticker_stacker(
         raise UnporcessableArgumentsError(errors)
 
     stickers_on_page = stickers_in_width * stickers_in_height
-    sticker_widht = page_size.width / stickers_in_width
+    sticker_width = page_size.width / stickers_in_width
     sticker_height = page_size.height / stickers_in_height
 
     writer = PdfWriter()
@@ -74,14 +75,20 @@ def sticker_stacker(
                 width=page_size.width,
                 height=page_size.height,
             )
-        s.scale_to(width=sticker_widht, height=sticker_height)
+
+        if keep_ratio:
+            if ((s.mediabox.width/s.mediabox.height) > 1) != ((sticker_width / sticker_height) > 1):
+                s.rotate(90)
+                s.transfer_rotation_to_content()
+
+        s.scale_to(width=sticker_width, height=sticker_height)
 
         x = i % stickers_in_width
         y = (i % stickers_on_page) // stickers_in_width
         destpage.merge_transformed_page(
             s,
             Transformation().translate(
-                x * sticker_widht,
+                x * sticker_width,
                 page_size.height - (y + 1) * sticker_height,  # origin is left bottom corner
             ),
         )
@@ -212,13 +219,36 @@ def grid_parameters(attr_key: str, value: str, result_dict: dict) -> dict:
     return result_dict
 
 
+# -w option. Stickers in width
 set_stickers_in_width = partial(grid_parameters, attr_key='stickers_in_width')
+# -h option. Stickers in height
 set_stickers_in_height = partial(grid_parameters, attr_key='stickers_in_height')
 
 
 def set_paper_format(value: str, result_dict: dict) -> dict:
+    """
+    -s option. Paper format.
+
+    :param value: one of pypdf supported formats
+    :param result_dict: Dict of arguments to modify
+    :return: Modified dict of arguments
+    """
     result_dict['paper_format'] = value
     return result_dict
+
+
+def set_keep_ratio(value: str, result_dict: dict) -> dict:
+    """
+    -r option. Pass 'false' to forbid rotation to keep original page ratio.
+    Everything else will be considered as true.
+
+    :param value: string 'false' is expected. Others are ignored
+    :param result_dict: Dict of arguments to modify
+    :return: Modified dict of arguments
+    """
+
+    if value.lower() == 'false':
+        result_dict['keep_ratio'] = False
 
 
 def parse_arguments() -> dict[str, str]:
@@ -241,6 +271,7 @@ def parse_arguments() -> dict[str, str]:
         '-w': set_stickers_in_width,
         '-h': set_stickers_in_height,
         '-s': set_paper_format,
+        '-r': set_keep_ratio,
     }
 
     # Get list of options with their values and list of files to use
