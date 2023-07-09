@@ -10,7 +10,7 @@ After you:
 - specify how many stickers should be placed across(horizontaly on) the page
 - specify how many stickers should be placed down(vertically on) the page
 - specify the size of a page
-- specify the gap between stickers if needed
+- specify the margins around each sticker if needed. Can be negative.
 - allow or disallow it to rotate a page when its original ratio is violated in the chosen layout
 - pick files individually or import all .pdf files from selected directories
 
@@ -34,13 +34,13 @@ After you:
     
     `-s [PAGE SIZE] - specify the page size. Like A4, A3 etc. Default is A4.`
 
-    `-g [INTEGER] - specify the gap between stickers in mm. Default is 0.`
+    `-m [INTEGER] - specify the margins around each sticker in mm. Default is 0. Can be negative.`
 
     `-r [BOOLEAN] - type 'false' if you don't want program to rotate the page if its ratio is violated. Default 
     is 'true'.`
 
 
-- Import function `compose_stickers`, read its doc and give it what it wants.
+- Import function `compose_stickers`, and give it what it wants.
 
 
 - Use beautiful UI:
