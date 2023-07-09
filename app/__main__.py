@@ -322,6 +322,3 @@ if __name__ == '__main__':
     except UnporcessableArgumentsError as uae:
         print(uae)
         sys.exit(1)
-
-# TODO:
-#  - gap feature
