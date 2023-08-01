@@ -93,7 +93,7 @@ class JSONPreferencesKeeper:
         preferences_to_save = {}
         for p in self._preferences:
             value = getattr(self, p)
-            if not value:  # todo: change to is none and if attr does not exist
+            if value is None or not hasattr(self, p):
                 continue
             preferences_to_save[p] = self.convert_prefs(value)
 
