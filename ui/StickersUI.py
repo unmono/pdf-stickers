@@ -7,7 +7,7 @@ from tkinter import ttk, filedialog, messagebox
 from pypdf import PaperSize
 
 from app.__main__ import compose_stickers, UnporcessableArgumentsError
-from JSONPreferencesKeeper import JSONPreferencesKeeper
+from .JSONPreferencesKeeper import JSONPreferencesKeeper
 
 PAPER_SIZES = [s for s in dir(PaperSize) if not s.startswith('__')]
 

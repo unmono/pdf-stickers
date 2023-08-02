@@ -45,4 +45,3 @@ After you:
 
 - Use beautiful UI:
     - run it as module: `python3 -m ui`
-    - use run.sh (why not) `chmod u+x run.sh`(x1) and then `./run.sh`(as needed)

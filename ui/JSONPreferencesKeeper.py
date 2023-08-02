@@ -26,7 +26,7 @@ class JSONPreferencesKeeper:
     _preferences: tuple[str]
     _preferences_file: Path
 
-    def convert_prefs_functions(self) -> dict[any, tuple[Callable, Callable]]:
+    def serilaization_functions(self) -> dict[any, tuple[Callable, Callable]]:
         """
         Maps defined types that needed to store and set up in a special way to
         functions that do it. Each entry of returned dict is:
@@ -55,22 +55,22 @@ class JSONPreferencesKeeper:
 
     def convert_prefs(self, value) -> Any:
         """
-        Uses first function mapped to types of attributes to convert values of
-        those attributes for store in JSON file. If value has a type not listed in
+        Uses first serialization function if defined to convert values of
+        attributes to store them in JSON file. If value has a type not listed in
         dictionary, it will be returned as is.
 
         :param value: value to store
         :return: converted value
         """
-        cf = self.convert_prefs_functions()
-        for pref_type, converters in cf.items():
+        sf = self.serilaization_functions()
+        for pref_type, converters in sf.items():
             if isinstance(value, pref_type):
                 return converters[0](value)
         return value
 
     def deconvert_prefs(self, attr_name: str, attr_instance: Any, stored_value: str) -> None:
         """
-        Uses second function mapped to types of attributes to deconvert stored values
+        Uses second serialization function to deconvert stored values
         and set them as values of those attributes in subclass.
 
         :param attr_name: name of attribute that we want ot set value to.
@@ -78,10 +78,10 @@ class JSONPreferencesKeeper:
         to set up the value. For example tkinter.Variable.get or .set methods.
         :param stored_value: value stored in JSON file
         """
-        cf = self.convert_prefs_functions()
-        for pref_type, convert_function in cf.items():
+        sf = self.serilaization_functions()
+        for pref_type, funcs in sf.items():
             if isinstance(attr_instance, pref_type):
-                convert_function[1](attr_name, attr_instance, stored_value)
+                funcs[1](attr_name, attr_instance, stored_value)
                 return
 
     def save_prefs(self) -> None:
@@ -116,7 +116,7 @@ class JSONPreferencesKeeper:
         for p in self._preferences:
             if p not in saved_preferences:
                 continue
-            # For some deconvert functions we need an actual instance of attribute
+            # For some deconvert functions we need an actual instance of the attribute
             attr_instance = getattr(self, p)
             self.deconvert_prefs(p, attr_instance, saved_preferences[p])
 
