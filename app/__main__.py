@@ -14,6 +14,11 @@ from pypdf import (
 
 
 class UnporcessableArgumentsError(Exception):
+    """
+    As longs as all parameters are checked individually the approach to gather
+    all errors and render them at once is chosen here. In case of multiple errors
+    in different parameters they will all be listed with error messages.
+    """
     def __init__(self, unprocessable_arguments: list[tuple[pathlib.Path | str, str]]):
         self.unprocessable_arguments = unprocessable_arguments
 
@@ -27,6 +32,8 @@ class UnporcessableArgumentsError(Exception):
 def validate_grid_value(*args) -> list[tuple[str, str]]:
     errors = []
     for value in args:
+        # Not more than 40 stickers. My rules!
+        # Think I need to put here sanity check dependend of selected format
         if value < 1 or value > 40:
             errors.append((value, 'Should be an integer from 1 to 40.'))
 
@@ -34,10 +41,14 @@ def validate_grid_value(*args) -> list[tuple[str, str]]:
 
 
 def validate_margins(margin: int, *args) -> list[tuple[str, str]]:
+    errors = []
     for dim in args:
+        # Adding margins resize stickers to keep the layout.
+        # If margins are so big, so that less than 5 mm is left
+        # for sticker, we don't play
         if (margin * 2 + 5) * 2.84 > dim:
-            return [(str(margin), 'Margin is too big for this layout'), ]
-    return []
+            errors.append((str(margin), 'Margin is too big for this layout'))
+    return errors
 
 
 def sticker_stacker(
@@ -49,19 +60,22 @@ def sticker_stacker(
         keep_ratio: bool = True,
 ) -> PdfWriter:
     """
-    Creates a PdfWriter object with all stickers placed on A4 pages.
+    Creates a PdfWriter object with all stickers placed on pages of specified format, according to
+    specified layout.
 
     :param paper_format: paper format to use (e.g. A4, A3 etc.)
     :param stickers_in_width: how many stickers do you want to place in a single row on a page(stickers in width)
     :param stickers_in_height: how many rows of stickers should be on a page(stickers in height)
     :param sticker_margin: margins around each sticker in mm
-    :param keep_ratio: to rotate or individual page if its original ratio is violated
+    :param keep_ratio: to rotate or not the sticker if its original ratio is violated
     :param stickers: list of PageObject representing each sticker
     :return: PdfWriter object ready to write in file
     """
 
     errors = []
     try:
+        # Try to get dimmensions of specified format, if this format is present in
+        # PaperSize class of pypdf
         page_size = getattr(PaperSize, paper_format.upper())
     except AttributeError:
         valid_formats = [f for f in dir(PaperSize) if not f.startswith('__')]
@@ -70,9 +84,10 @@ def sticker_stacker(
     errors += validate_grid_value(stickers_in_width, stickers_in_height)
 
     stickers_on_page = stickers_in_width * stickers_in_height
+    margin_in_pixels = round(sticker_margin * 2.8347)
+    # Dimmensions of stickers with margins:
     sticker_space_width = page_size.width / stickers_in_width
     sticker_space_height = page_size.height / stickers_in_height
-    margin_in_pixels = round(sticker_margin * 2.8347)
 
     errors += validate_margins(sticker_margin, sticker_space_width, sticker_space_height)
     if errors:
@@ -80,26 +95,34 @@ def sticker_stacker(
 
     writer = PdfWriter()
 
+    # Dimmensions of stickers without margins:
     sticker_width = sticker_space_width - margin_in_pixels * 2
     sticker_height = sticker_space_height - margin_in_pixels * 2
+
     destpage: PageObject | None = None
     for i, s in enumerate(stickers):
         if i % stickers_on_page == 0:
+            # Add blank page
             destpage = writer.add_blank_page(
                 width=page_size.width,
                 height=page_size.height,
             )
-            destpage.add_transformation(Transformation().translate(margin_in_pixels, margin_in_pixels))
+            # Move cursor from default position according to specified margins
+            # destpage.add_transformation(Transformation().translate(margin_in_pixels, margin_in_pixels))
 
         if keep_ratio:
+            # Rotate sticker if needed to roughly keep its ratio
             if ((s.mediabox.width/s.mediabox.height) > 1) != ((sticker_space_width / sticker_space_height) > 1):
                 s.rotate(90).transfer_rotation_to_content()
 
+        # Resize sticker
         s.scale_to(width=sticker_width, height=sticker_height)
 
+        # Current sticker on x and y
         x = i % stickers_in_width
         y = (i % stickers_on_page) // stickers_in_width
 
+        # Move cursor to current sticker position and put it there
         destpage.merge_transformed_page(
             s,
             Transformation().translate(
@@ -180,7 +203,7 @@ def parse_options(
         implemented_options: Iterable
 ) -> tuple[list[tuple[str, str]], list[str]]:
     """
-    Separate options, if provided, from file names.
+    Collects options if provided from input arguments.
 
     :param arguments: List of all provided arguments
     :param implemented_options: Iterable of implemented options to parse
@@ -197,41 +220,34 @@ def parse_options(
     return options, arguments
 
 
-def file_name(value: str, result_dict: dict) -> dict:
+def file_name(value: str, result_dict: dict) -> None:
     """
     -f option. User defined name of final file.
 
     :param value: User provided name
     :param result_dict: Dict of arguments to modify
-    :return: Modified dict of arguments
     """
     result_dict['file_to_write'] = value
-    return result_dict
 
 
-def directory(value: str, result_dict: dict) -> dict:
+def directory(value: str, result_dict: dict) -> None:
     """
     -d option. User defined directory from which all pdf files will be used as files list.
 
     :param value: Name of the directory
     :param result_dict: Dict of arguments to modify
-    :return: Modified dict of arguments
     """
     try:
         result_dict['files_list'] = [value / pathlib.Path(f) for f in os.listdir(value) if f.endswith(('.pdf', '.PDF'))]
     except FileNotFoundError:
         raise UnporcessableArgumentsError([(value, 'No such directory'), ])
 
-    return result_dict
 
-
-def grid_parameters(attr_key: str, value: str, result_dict: dict) -> dict:
+def grid_parameters(attr_key: str, value: str, result_dict: dict) -> None:
     try:
         result_dict[attr_key] = int(value)
     except ValueError:
         raise UnporcessableArgumentsError([(value, 'Should be an integer'), ])
-
-    return result_dict
 
 
 # -w option. Stickers in width
@@ -240,26 +256,23 @@ set_stickers_in_width = partial(grid_parameters, attr_key='stickers_in_width')
 set_stickers_in_height = partial(grid_parameters, attr_key='stickers_in_height')
 
 
-def set_paper_format(value: str, result_dict: dict) -> dict:
+def set_paper_format(value: str, result_dict: dict) -> None:
     """
     -s option. Paper format.
 
     :param value: one of pypdf supported formats
     :param result_dict: Dict of arguments to modify
-    :return: Modified dict of arguments
     """
     result_dict['paper_format'] = value
-    return result_dict
 
 
-def set_keep_ratio(value: str, result_dict: dict) -> dict:
+def set_keep_ratio(value: str, result_dict: dict) -> None:
     """
     -r option. Pass 'false' to forbid rotation to keep original page ratio.
     Everything else will be considered as true.
 
     :param value: string 'false' is expected. Others are ignored
     :param result_dict: Dict of arguments to modify
-    :return: Modified dict of arguments
     """
 
     if value.lower() == 'false':
@@ -281,9 +294,9 @@ def parse_arguments() -> dict[str, str]:
     -d - optional. Directory from which all pdf files will be used as input files
     -w - optional. How many stickers should be placed across the page
     -h - optional. How many stickers should be placed down the page
-    -m - optional. Margins around each sticker in mm
     -s - optional. Paper format to use (e.g. A4, A3 etc.)
     -r - optional. Prevent rotation to keep original ratio of stickers
+    -m - optional. Margins around each sticker in mm
 
     :return: Dict of kwargs to main function
     """
@@ -316,7 +329,6 @@ def parse_arguments() -> dict[str, str]:
 
 
 if __name__ == '__main__':
-    # print(parse_arguments())
     try:
         compose_stickers(**parse_arguments())
     except UnporcessableArgumentsError as uae:
