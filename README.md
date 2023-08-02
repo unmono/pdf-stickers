@@ -4,11 +4,12 @@
 
 ---
 
-**Does:** resize each page from the input files and arrange them on a page according to the chosen layout.
+**Does:** resize each page from the input files and arrange them on a pages of chosen size according to the 
+chosen layout.
 
 After you:
-- specify how many stickers should be placed across(horizontaly on) the page
-- specify how many stickers should be placed down(vertically on) the page
+- specify how many stickers should be placed across the page
+- specify how many stickers should be placed down the page
 - specify the size of a page
 - specify the margins around each sticker if needed. Can be negative.
 - allow or disallow it to rotate a page when its original ratio is violated in the chosen layout
