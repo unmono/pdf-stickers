@@ -39,7 +39,7 @@ class JSONPreferencesKeeper:
         and set it.
 
         For example, if it's needed to store strings in the uppercase, but use them
-        in lowercase(why not?), one entry of this dictionary would be:
+        in lowercase, just because you can, one entry of this dictionary would be:
         :return: {str: (lambda value: value.upper(), lambda name, obj, value: setattr(self, name, value.lower()}
         """
         return {

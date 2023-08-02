@@ -17,6 +17,9 @@ After you:
 ---
 
 **How:**
+
+Install dependencies `pip install -r requirements.txt`
+
 - Use it as a module:
 
     `python3 -m app [OPTIONS] list.pdf of.pdf files.pdf to.pdf combine.pdf`
@@ -43,5 +46,6 @@ After you:
 - Import function `compose_stickers`, and give it what it wants.
 
 
-- Use beautiful UI:
+- Use beautiful UI (Tkinter should be installed):
     - run it as module: `python3 -m ui`
+    - use run.sh(why not?) : `chmod u+x run.sh`(1x) and `./run.sh`(as you need)
