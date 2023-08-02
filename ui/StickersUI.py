@@ -1,5 +1,5 @@
 import os
-from typing import Iterable, Callable
+from typing import Iterable
 from pathlib import Path
 
 import tkinter as tk
@@ -33,10 +33,6 @@ class StickersUI(JSONPreferencesKeeper):
         self.initial_browse_files_dir = Path()
         self.initial_save_dir = Path()
         self._file_list = []
-        # Set the default values
-        # self.stickers_in_width.set(2)
-        # self.stickers_in_height.set(3)
-        # self.paper_size.set('A4')
 
         # Frames:
         # Main frames
@@ -81,7 +77,7 @@ class StickersUI(JSONPreferencesKeeper):
         self.cbt_keep_ratio = tk.Checkbutton(master=self.frm_options, text='Rotate to keep original ratio',
                                              variable=self.keep_ratio)
         self.sbx_sticker_margin = tk.Spinbox(master=self.frm_options, from_=-100, to=100, width=5,
-                                              textvariable=self.sticker_margin)
+                                             textvariable=self.sticker_margin)
 
         self.cbt_keep_ratio.pack(side=tk.LEFT)
         self.sbx_sticker_margin.pack(side=tk.RIGHT)
@@ -107,7 +103,7 @@ class StickersUI(JSONPreferencesKeeper):
         self.btn_clear.pack(side=tk.LEFT, padx=4)
         self.btn_save.pack(side=tk.RIGHT)
 
-        # Set preferences to keep between starts:
+        # Set preferences to keep between runs
         # Pass attribute names to method
         self.define_prefs(
             'paper_size',
