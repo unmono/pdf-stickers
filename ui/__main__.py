@@ -1,8 +1,6 @@
-from ui.StickersUI import StickersUI
+from .StickersUI import StickersUI
+from .JSONAttributeKeeper import JSONAttributeKeeper
 
 if __name__ == '__main__':
-    stickers = StickersUI()
+    stickers = StickersUI(keeper=JSONAttributeKeeper)
     stickers.run()
-
-# TODO:
-#  - create desktop entries and install scripts

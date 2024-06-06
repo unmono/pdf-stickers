@@ -13,7 +13,7 @@ from pypdf import (
 )
 
 
-class UnporcessableArgumentsError(Exception):
+class UnprocessableArgumentsError(Exception):
     """
     As longs as all parameters are checked individually the approach to gather
     all errors and render them at once is chosen here. In case of multiple errors
@@ -33,7 +33,7 @@ def validate_grid_value(*args) -> list[tuple[str, str]]:
     errors = []
     for value in args:
         # Not more than 40 stickers. My rules!
-        # Think I need to put here sanity check dependend of selected format
+        # Think I need to put here sanity check depended on selected format
         if value < 1 or value > 40:
             errors.append((value, 'Should be an integer from 1 to 40.'))
 
@@ -74,7 +74,7 @@ def sticker_stacker(
 
     errors = []
     try:
-        # Try to get dimmensions of specified format, if this format is present in
+        # Try to get dimensions of specified format, if this format is present in
         # PaperSize class of pypdf
         page_size = getattr(PaperSize, paper_format.upper())
     except AttributeError:
@@ -85,17 +85,17 @@ def sticker_stacker(
 
     stickers_on_page = stickers_in_width * stickers_in_height
     margin_in_pixels = round(sticker_margin * 2.8347)
-    # Dimmensions of stickers with margins:
+    # Dimensions of stickers with margins:
     sticker_space_width = page_size.width / stickers_in_width
     sticker_space_height = page_size.height / stickers_in_height
 
     errors += validate_margins(sticker_margin, sticker_space_width, sticker_space_height)
     if errors:
-        raise UnporcessableArgumentsError(errors)
+        raise UnprocessableArgumentsError(errors)
 
     writer = PdfWriter()
 
-    # Dimmensions of stickers without margins:
+    # Dimensions of stickers without margins:
     sticker_width = sticker_space_width - margin_in_pixels * 2
     sticker_height = sticker_space_height - margin_in_pixels * 2
 
@@ -175,7 +175,7 @@ def process_paths(files_list: list[str | os.PathLike]) -> list[PdfReader]:
             unprocessable_paths.append(file_error)
 
     if unprocessable_paths:
-        raise UnporcessableArgumentsError(unprocessable_paths)
+        raise UnprocessableArgumentsError(unprocessable_paths)
 
     return [PdfReader(f) for f in files_list]
 
@@ -240,14 +240,14 @@ def directory(value: str, result_dict: dict) -> None:
     try:
         result_dict['files_list'] = [value / pathlib.Path(f) for f in os.listdir(value) if f.endswith(('.pdf', '.PDF'))]
     except FileNotFoundError:
-        raise UnporcessableArgumentsError([(value, 'No such directory'), ])
+        raise UnprocessableArgumentsError([(value, 'No such directory'), ])
 
 
 def grid_parameters(attr_key: str, value: str, result_dict: dict) -> None:
     try:
         result_dict[attr_key] = int(value)
     except ValueError:
-        raise UnporcessableArgumentsError([(value, 'Should be an integer'), ])
+        raise UnprocessableArgumentsError([(value, 'Should be an integer'), ])
 
 
 # -w option. Stickers in width
@@ -283,7 +283,7 @@ def set_margins(value: int, result_dict: dict) -> None:
     try:
         result_dict['sticker_margin'] = int(value)
     except ValueError:
-        raise UnporcessableArgumentsError([(str(value), 'Is not valid value for margin.'), ])
+        raise UnprocessableArgumentsError([(str(value), 'Is not valid value for margin.'), ])
 
 
 def parse_arguments() -> dict[str, str]:
@@ -331,6 +331,6 @@ def parse_arguments() -> dict[str, str]:
 if __name__ == '__main__':
     try:
         compose_stickers(**parse_arguments())
-    except UnporcessableArgumentsError as uae:
+    except UnprocessableArgumentsError as uae:
         print(uae)
         sys.exit(1)

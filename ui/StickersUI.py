@@ -1,4 +1,5 @@
 import os
+import tkinter
 from typing import Iterable
 from pathlib import Path
 
@@ -6,14 +7,13 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from pypdf import PaperSize
 
-from app.__main__ import compose_stickers, UnporcessableArgumentsError
-from .JSONPreferencesKeeper import JSONPreferencesKeeper
+from app.main import compose_stickers, UnprocessableArgumentsError
 
 PAPER_SIZES = [s for s in dir(PaperSize) if not s.startswith('__')]
 
 
-class StickersUI(JSONPreferencesKeeper):
-    def __init__(self):
+class StickersUI:
+    def __init__(self, keeper):
         self.root = tk.Tk()
         self.root.title('Sticker stacker')
         self.root.minsize(width=600, height=300)
@@ -61,13 +61,13 @@ class StickersUI(JSONPreferencesKeeper):
                                            textvariable=self.paper_size, )
         self.sbx_stickers_in_width = tk.Spinbox(master=self.frm_grid, from_=1, to=40, width=2,
                                                 textvariable=self.stickers_in_width)
-        self.sbx_stickers_in_heigth = tk.Spinbox(master=self.frm_grid, from_=1, to=40, width=2,
+        self.sbx_stickers_in_height = tk.Spinbox(master=self.frm_grid, from_=1, to=40, width=2,
                                                  textvariable=self.stickers_in_height)
 
         self.sbx_stickers_in_width.grid(column=0, row=0)
         tk.Label(master=self.frm_grid, text='stickers across the page').grid(column=1, row=0, sticky='w', padx=3)
 
-        self.sbx_stickers_in_heigth.grid(column=0, row=1)
+        self.sbx_stickers_in_height.grid(column=0, row=1)
         tk.Label(master=self.frm_grid, text='stickers down the page').grid(column=1, row=1, sticky='w', padx=3)
 
         self.cbx_paper_size.grid(column=1, row=0)
@@ -105,17 +105,25 @@ class StickersUI(JSONPreferencesKeeper):
 
         # Set preferences to keep between runs
         # Pass attribute names to method
-        self.define_prefs(
-            'paper_size',
-            'stickers_in_width',
-            'stickers_in_height',
-            'browse_mode',
-            'keep_ratio',
-            'sticker_margin',
-            'initial_browse_dir',
-            'initial_browse_files_dir',
-            'initial_save_dir',
-        )
+        if keeper:
+            self.keeper = keeper(
+                obj=self,
+                attrs=(
+                    'paper_size',
+                    'stickers_in_width',
+                    'stickers_in_height',
+                    'browse_mode',
+                    'keep_ratio',
+                    'sticker_margin',
+                    'initial_browse_dir',
+                    'initial_browse_files_dir',
+                    'initial_save_dir',
+                ),
+            )
+            keeper.converters[tk.Variable] = lambda v: v.get()
+            keeper.setters[tk.Variable] = lambda obj, n, v: getattr(obj, n).set(v)
+        else:
+            self.keeper = None
 
     @property
     def file_list(self) -> list[Path]:
@@ -195,14 +203,16 @@ class StickersUI(JSONPreferencesKeeper):
             }
             try:
                 compose_stickers(self.file_list, path_to_save, **kwargs)
-            except UnporcessableArgumentsError as e:
+            except UnprocessableArgumentsError as e:
                 messagebox.showerror(message=str(e))
             # Save used preferences
-            self.save_prefs()
+            if self.keeper:
+                self.keeper.save()
 
     def run(self) -> None:
         """
         Start method. Runs UI and sets saved preferences if they exist
         """
-        self.set_prefs()
+        if self.keeper:
+            self.keeper.setup()
         self.root.mainloop()
