@@ -4,6 +4,10 @@ activate() {
   . "$APP_DIR/.venv/bin/activate"
 }
 activate
-cd "$APP_DIR" || exit 1
-setsid -f python3 -m ui
-exit 0
+if ! python3 -c "import tkinter"; then
+  echo "Tkinter required but not installed."
+else
+  cd "$APP_DIR" || exit 1
+  setsid -f python3 -m ui
+  exit 0
+fi

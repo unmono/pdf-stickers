@@ -21,9 +21,6 @@ while getopts "p:" opt; do
       ;;
   esac
 done
-if ! $PY -c "import tkinter"; then
-  exit_prompt "Tkinter required but not installed" 1
-fi
 if ! [ -d "$APP_DIR/.venv" ]; then
   if ! ($PY -m venv "$APP_DIR/.venv" & pidV=$! && wait $pidV); then
    exit_prompt "Failed to setup virtual environment" 1
