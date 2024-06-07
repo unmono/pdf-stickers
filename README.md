@@ -1,25 +1,54 @@
 # pdf-stickers
 
-**Should:** combine .pdf files, so they can be printed on a chosen page size
+**TL/DR:** combines .pdf files according to chosen layout on chosen page size.
 
 ---
 
-**Does:** resize each page from the input files and arrange them on a pages of chosen size according to the 
-chosen layout.
+**What actually happens:**
 
-After you:
-- specify how many stickers should be placed across the page
-- specify how many stickers should be placed down the page
-- specify the size of a page
-- specify the margins around each sticker if needed. Can be negative.
-- allow or disallow it to rotate a page when its original ratio is violated in the chosen layout
-- pick files individually or import all .pdf files from selected directories
+Let's call each individual page from input files - a **sticker**.
+
+You specify:
+- How many stickers should be placed across the page.
+- How many stickers should be placed down the page.
+- The format of a page (A3, A4, A5, etc.).
+- The margins around each sticker if needed. Can be negative.
+- Fill available space or resize sticker to fit into it.
+- Whether to rotate a page when its original ratio is violated in chosen layout.
+- Files individually or directories from which all .pdf files will be imported.
+
+Program does:
+- Resizes each page from input files to fit in specified layout filling all space or just fitting in
+- Rotates stickers if needed
+- Saves resulted .pdf file
+
+Example:
+You can choose files consisted together of 12 pages, select layout 2 x 3 and result will be .pdf file consisted of 2 
+pages with 6 stickers on each.
+Or you can specify 1 x 1 layout and result will be all pages from all input files combined in one.
 
 ---
 
-**How:**
+**How to use:**
 
-Install dependencies `pip install -r requirements.txt`
+- install:
+    
+    `chmod u+x run.sh install.sh`
+    
+    `. install.sh`
+    
+    or
+
+    setup venv and install dependencies by yourself
+
+
+- Use UI:
+    
+  *Tkinter must be installed* 
+
+    `. run.sh`, 
+    enjoy
+
 
 - Use it as a module:
 
@@ -43,10 +72,7 @@ Install dependencies `pip install -r requirements.txt`
     `-r [BOOLEAN] - type 'false' if you don't want program to rotate the page if its ratio is violated. Default 
     is 'true'.`
 
+    `-l [BOOLEAN] - type 'true' to resize each sticker to all available space instead of fit in it.`
 
-- Import function `compose_stickers`, and give it what it wants.
 
-
-- Use beautiful UI (Tkinter should be installed):
-    - run it as module: `python3 -m ui`
-    - use run.sh(why not?) : `chmod u+x run.sh`(1x) and `./run.sh`(as you need)
+- In your code import function `compose_stickers`, and give it what it wants.
