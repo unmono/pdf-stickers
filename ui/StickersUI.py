@@ -1,10 +1,9 @@
 import os
-import tkinter
-from typing import Iterable
-from pathlib import Path
-
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk, filedialog, messagebox
+from typing import Iterable
+
 from pypdf import PaperSize
 
 from app.main import compose_stickers, UnprocessableArgumentsError
@@ -25,6 +24,7 @@ class StickersUI:
         self.stickers_in_height = tk.IntVar(value=3)
         self.browse_mode = tk.IntVar()
         self.keep_ratio = tk.BooleanVar(value=True)
+        self.fill = tk.BooleanVar(value=False)
         self.sticker_margin = tk.IntVar(value=0)
         # This list needed to pick right function based on browse_mode state.
         # Values of radio buttons correspond to indexes in this list.
@@ -59,10 +59,12 @@ class StickersUI:
                                            values=PAPER_SIZES,
                                            width=5,
                                            textvariable=self.paper_size, )
-        self.sbx_stickers_in_width = tk.Spinbox(master=self.frm_grid, from_=1, to=40, width=2,
+        self.sbx_stickers_in_width = tk.Spinbox(master=self.frm_grid, from_=1, to=40, width=5,
                                                 textvariable=self.stickers_in_width)
-        self.sbx_stickers_in_height = tk.Spinbox(master=self.frm_grid, from_=1, to=40, width=2,
+        self.sbx_stickers_in_height = tk.Spinbox(master=self.frm_grid, from_=1, to=40, width=5,
                                                  textvariable=self.stickers_in_height)
+        self.sbx_sticker_margin = tk.Spinbox(master=self.frm_grid, from_=-100, to=100, width=5,
+                                             textvariable=self.sticker_margin)
 
         self.sbx_stickers_in_width.grid(column=0, row=0)
         tk.Label(master=self.frm_grid, text='stickers across the page').grid(column=1, row=0, sticky='w', padx=3)
@@ -70,18 +72,20 @@ class StickersUI:
         self.sbx_stickers_in_height.grid(column=0, row=1)
         tk.Label(master=self.frm_grid, text='stickers down the page').grid(column=1, row=1, sticky='w', padx=3)
 
+        self.sbx_sticker_margin.grid(column=0, row=2)
+        tk.Label(master=self.frm_grid, text='Margins around the stickers in mm:').grid(column=1, row=2, sticky='w', padx=3)
+
         self.cbx_paper_size.grid(column=1, row=0)
         tk.Label(master=self.frm_paper_size, text='Pape size:').grid(column=0, row=0, padx=3)
 
         # Additional options
+        self.cbt_fill = tk.Checkbutton(master=self.frm_options, text='Fill all available space',
+                                       variable=self.fill)
         self.cbt_keep_ratio = tk.Checkbutton(master=self.frm_options, text='Rotate to keep original ratio',
                                              variable=self.keep_ratio)
-        self.sbx_sticker_margin = tk.Spinbox(master=self.frm_options, from_=-100, to=100, width=5,
-                                             textvariable=self.sticker_margin)
 
-        self.cbt_keep_ratio.pack(side=tk.LEFT)
-        self.sbx_sticker_margin.pack(side=tk.RIGHT)
-        tk.Label(master=self.frm_options, text='Margins around the stickers in mm:').pack(side=tk.RIGHT, padx=2)
+        self.cbt_fill.pack(side=tk.TOP, anchor=tk.W)
+        self.cbt_keep_ratio.pack(side=tk.TOP, anchor=tk.W)
 
         # Radios:
         self.rbn_browse_dir = tk.Radiobutton(master=self.frm_radios,
@@ -113,6 +117,7 @@ class StickersUI:
                     'stickers_in_width',
                     'stickers_in_height',
                     'browse_mode',
+                    'fill',
                     'keep_ratio',
                     'sticker_margin',
                     'initial_browse_dir',
@@ -200,6 +205,7 @@ class StickersUI:
                 'paper_format': self.paper_size.get(),
                 'sticker_margin': self.sticker_margin.get(),
                 'keep_ratio': self.keep_ratio.get(),
+                'fill': self.fill.get(),
             }
             try:
                 compose_stickers(self.file_list, path_to_save, **kwargs)

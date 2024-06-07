@@ -1,8 +1,8 @@
 import os
-import sys
 import pathlib
-from typing import Iterable
+import sys
 from functools import partial
+from typing import Iterable
 
 from pypdf import (
     PdfReader,
@@ -47,7 +47,7 @@ def validate_margins(margin: int, *args) -> list[tuple[str, str]]:
         # If margins are so big, so that less than 5 mm is left
         # for sticker, we don't play
         if (margin * 2 + 5) * 2.84 > dim:
-            errors.append((str(margin), 'Margin is too big for this layout'))
+            errors.append((str(margin), 'Margins are too big for this layout'))
     return errors
 
 
@@ -57,22 +57,27 @@ def sticker_stacker(
         stickers_in_width: int = 2,
         stickers_in_height: int = 3,
         sticker_margin: int = 0,
+        fill: bool = False,
         keep_ratio: bool = True,
 ) -> PdfWriter:
     """
     Creates a PdfWriter object with all stickers placed on pages of specified format, according to
     specified layout.
 
+    :param stickers: list of PageObject representing each sticker
     :param paper_format: paper format to use (e.g. A4, A3 etc.)
     :param stickers_in_width: how many stickers do you want to place in a single row on a page(stickers in width)
     :param stickers_in_height: how many rows of stickers should be on a page(stickers in height)
     :param sticker_margin: margins around each sticker in mm
+    :param fill: set True to resize sticker to fill all available space
     :param keep_ratio: to rotate or not the sticker if its original ratio is violated
-    :param stickers: list of PageObject representing each sticker
     :return: PdfWriter object ready to write in file
     """
 
+    # TODO: redo error handling
     errors = []
+    errors += validate_grid_value(stickers_in_width, stickers_in_height)
+
     try:
         # Try to get dimensions of specified format, if this format is present in
         # PaperSize class of pypdf
@@ -81,15 +86,14 @@ def sticker_stacker(
         valid_formats = [f for f in dir(PaperSize) if not f.startswith('__')]
         errors.append((paper_format, f'It is not a valid paper format. Please chose from: {", ".join(valid_formats)}'))
 
-    errors += validate_grid_value(stickers_in_width, stickers_in_height)
-
     stickers_on_page = stickers_in_width * stickers_in_height
     margin_in_pixels = round(sticker_margin * 2.8347)
     # Dimensions of stickers with margins:
-    sticker_space_width = page_size.width / stickers_in_width
-    sticker_space_height = page_size.height / stickers_in_height
+    if not errors:  # Patch
+        sticker_space_width = page_size.width / stickers_in_width
+        sticker_space_height = page_size.height / stickers_in_height
+        errors += validate_margins(sticker_margin, sticker_space_width, sticker_space_height)
 
-    errors += validate_margins(sticker_margin, sticker_space_width, sticker_space_height)
     if errors:
         raise UnprocessableArgumentsError(errors)
 
@@ -116,7 +120,10 @@ def sticker_stacker(
                 s.rotate(90).transfer_rotation_to_content()
 
         # Resize sticker
-        s.scale_to(width=sticker_width, height=sticker_height)
+        if fill:
+            s.scale_to(width=sticker_width, height=sticker_height)
+        else:
+            s.scale_by(min(sticker_width/s.mediabox.width, sticker_height/s.mediabox.height))
 
         # Current sticker on x and y
         x = i % stickers_in_width
@@ -275,8 +282,21 @@ def set_keep_ratio(value: str, result_dict: dict) -> None:
     :param result_dict: Dict of arguments to modify
     """
 
-    if value.lower() == 'false':
+    if value.lower() in ('false', 'f', '0'):
         result_dict['keep_ratio'] = False
+
+
+def set_fill(value: str, result_dict: dict) -> None:
+    """
+    -r option. Pass 'false' to forbid rotation to keep original page ratio.
+    Everything else will be considered as true.
+
+    :param value: string 'false' is expected. Others are ignored
+    :param result_dict: Dict of arguments to modify
+    """
+
+    if value.lower() in ('true', 't', 1, '1'):
+        result_dict['fill'] = True
 
 
 def set_margins(value: int, result_dict: dict) -> None:
@@ -295,7 +315,7 @@ def parse_arguments() -> dict[str, str]:
     -w - optional. How many stickers should be placed across the page
     -h - optional. How many stickers should be placed down the page
     -s - optional. Paper format to use (e.g. A4, A3 etc.)
-    -r - optional. Prevent rotation to keep original ratio of stickers
+    -r - optional. Rotate to keep original ratio of stickers
     -m - optional. Margins around each sticker in mm
 
     :return: Dict of kwargs to main function
@@ -309,6 +329,7 @@ def parse_arguments() -> dict[str, str]:
         '-h': set_stickers_in_height,
         '-s': set_paper_format,
         '-r': set_keep_ratio,
+        '-l': set_fill,
         '-m': set_margins,
     }
 

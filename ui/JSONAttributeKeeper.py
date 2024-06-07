@@ -1,9 +1,10 @@
 import json
 import os
 from pathlib import Path
-from typing import Callable, Iterable, Any
+from typing import Callable, Iterable, Any, TypeVar, Union
 
-type CanBeFile = os.PathLike | str
+# type CanBeFile = os.PathLike | str
+CanBeFile = TypeVar("CanBeFile", bound=Union[str, Path])
 
 
 def validate_file_path(file_path: CanBeFile) -> Path:
