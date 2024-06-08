@@ -39,7 +39,7 @@ Or you can specify 1 x 1 layout and result will be all pages from all input file
 
     or
 
-    `. install.sh -p python3.12` or whatever installed interpreter name if you need to use non-default interpreter
+    `. install.sh -p python3.12` or whatever installed interpreter name, if you need to use non-default one
     
     or
 
